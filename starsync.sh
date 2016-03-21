@@ -2,13 +2,37 @@
 
 USER=
 STARDIR=
+TOTAL_NEW=0
+TOTAL_UPDATED=0
 
 main() {
     prompt-for-username
     make-star-directory
     cd "$STARDIR"
     fetch-all-stars
+    restart-line
+    show-summary
     cd ..
+}
+
+show-summary() {
+    echo -n "Synced $TOTAL_UPDATED repositor"
+    if test 1 -eq $TOTAL_UPDATED ; then
+        echo 'y'
+    else
+        echo -n 'ies.'
+        case $TOTAL_UPDATED in
+            0)
+                echo
+                ;;
+            1)
+                echo ' Of those, one was new.'
+                ;;
+            *)
+                echo " Of those, $TOTAL_NEW were new."
+                ;;
+        esac
+    fi
 }
 
 prompt-for-username() {
@@ -26,12 +50,14 @@ make-star-directory() {
 }
 
 fetch-all-stars() {
-    curl "https://api.github.com/users/$USER/starred" \
+    set -e
+    curl -s "https://api.github.com/users/$USER/starred" \
          | jq -r '.[]|[.git_url, .owner.login, .name]|@tsv' \
          | while read -r URL AUTHOR NAME
     do
         clone-or-pull $URL $AUTHOR $NAME
     done
+    set +e
 }
 
 prompt() {
@@ -63,26 +89,35 @@ input() {
     fi
 }
 
+restart-line() {
+    echo -ne '\e[G\e[K'
+}
+
 msg() {
-    echo "[$@]"
+    restart-line
+    echo -n "[$@]"
 }
 
 clone-or-pull() {
     local URL="$1"
     local AUTHOR="$2"
     local NAME="$3"
+    set -e
+    TOTAL_UPDATED=$((TOTAL_UPDATED + 1))
     if test -d "$AUTHOR/$NAME" ; then
         msg "Updating $NAME..."
         cd "$AUTHOR/$NAME"
-        git pull --ff-only
+        git pull --ff-only >/dev/null
         cd ../..
     else
         msg "Cloning $NAME..."
+        TOTAL_NEW=$((TOTAL_NEW + 1))
         mkdir -p "$AUTHOR"
         cd "$AUTHOR"
-        git clone "$URL"
+        git clone "$URL" >/dev/null
         cd ..
     fi
+    set +e
 }
 
 main

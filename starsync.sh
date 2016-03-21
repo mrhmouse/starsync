@@ -24,6 +24,13 @@ parse-opts() {
             --no-clones)
                 CLONE=
                 ;;
+            
+            --user) ;&
+            -u)
+                USER="$2"
+                shift
+                ;;
+            
             *) ;&
             --help) ;&
             -h)
@@ -35,9 +42,10 @@ parse-opts() {
 }
 
 show-usage-and-exit() {
-    echo "Usage: $PROGNAME [--no-clones] [-h|--help]"
-    echo "  --no-clones     Do not clone new stars"
-    echo "  -h | --help     Show this help message"
+    echo "Usage: $PROGNAME [--no-clones] [-h|--help] [-u|--user]"
+    echo '  --no-clones     Do not clone new stars'
+    echo '  -h | --help     Show this help message'
+    echo '  -u | --user     Set your username. If unset, you will be prompted for it'
     exit
 }
 
@@ -62,6 +70,10 @@ show-summary() {
 }
 
 prompt-for-username() {
+    if test -n "$USER" ; then
+        return
+    fi
+    
     USER="$(whoami)"
     if prompt "Using $USER as your username; is this OK?" ; then
         return

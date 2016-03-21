@@ -14,3 +14,7 @@ Dependencies
 Probably Zsh isn't actually required, but `starsync.sh`
 explicitly calls it out in the shebang line. It's not
 tested with any other shell.
+
+Example
+-------
+[![asciicast](https://asciinema.org/a/60quj6v5uvvagd7ijv0tx1glx.png)](https://asciinema.org/a/60quj6v5uvvagd7ijv0tx1glx)

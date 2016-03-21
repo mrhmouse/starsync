@@ -1,11 +1,14 @@
 #!/usr/bin/zsh
 
+PROGNAME=starsync
 USER=
 STARDIR=
 TOTAL_NEW=0
 TOTAL_UPDATED=0
+CLONE=1
 
 main() {
+    parse-opts "$@"
     prompt-for-username
     make-star-directory
     cd "$STARDIR"
@@ -13,6 +16,29 @@ main() {
     restart-line
     show-summary
     cd ..
+}
+
+parse-opts() {
+    while test $# -gt 0 ; do
+        case "$1" in
+            --no-clones)
+                CLONE=
+                ;;
+            *) ;&
+            --help) ;&
+            -h)
+                show-usage-and-exit
+                ;;
+        esac
+        shift
+    done
+}
+
+show-usage-and-exit() {
+    echo "Usage: $PROGNAME [--no-clones] [-h|--help]"
+    echo "  --no-clones     Do not clone new stars"
+    echo "  -h | --help     Show this help message"
+    exit
 }
 
 show-summary() {
@@ -51,11 +77,19 @@ make-star-directory() {
 
 fetch-all-stars() {
     set -e
-    curl -s "https://api.github.com/users/$USER/starred" \
-         | jq -r '.[]|[.git_url, .owner.login, .name]|@tsv' \
-         | while read -r URL AUTHOR NAME
-    do
-        clone-or-pull $URL $AUTHOR $NAME
+    local PAGE=1
+    local READ=1
+    while test 1 -eq $READ ; do
+        READ=0
+        curl -s "https://api.github.com/users/$USER/starred?page=$PAGE" \
+            | jq -r '.[]|[.git_url, .owner.login, .name]|@tsv' \
+            | while read -r URL AUTHOR NAME
+        do
+            READ=1
+            clone-or-pull $URL $AUTHOR $NAME
+        done
+
+        PAGE=$((PAGE + 1))
     done
     set +e
 }
@@ -105,19 +139,20 @@ clone-or-pull() {
     set -e
     TOTAL_UPDATED=$((TOTAL_UPDATED + 1))
     if test -d "$AUTHOR/$NAME" ; then
-        msg "Updating $NAME..."
+        msg "Updating $AUTHOR/$NAME..."
         cd "$AUTHOR/$NAME"
-        git pull --ff-only >/dev/null
+        git pull --ff-only -q
         cd ../..
-    else
-        msg "Cloning $NAME..."
+    elif test -n "$CLONE" ; then
+        msg "Cloning $AUTHOR/$NAME..."
         TOTAL_NEW=$((TOTAL_NEW + 1))
         mkdir -p "$AUTHOR"
         cd "$AUTHOR"
-        git clone "$URL" >/dev/null
+        git clone -q "$URL"
         cd ..
     fi
     set +e
 }
 
-main
+PROGNAME="$(basename "$0")"
+main "$@"

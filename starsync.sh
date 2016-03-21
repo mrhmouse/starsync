@@ -6,7 +6,9 @@ STARDIR=
 main() {
     prompt-for-username
     make-star-directory
+    cd "$STARDIR"
     fetch-all-stars
+    cd ..
 }
 
 prompt-for-username() {
@@ -24,10 +26,12 @@ make-star-directory() {
 }
 
 fetch-all-stars() {
-    curl https://api.github.com/users/mrhmouse/starred | jq -r '.[]|@sh "\(.git_url)", "\(.author)", "\(.name)"' |\
-        while read -r URL AUTHOR NAME ; do
-            clone-or-pull "$URL" "$AUTHOR" "$NAME"
-        done
+    curl "https://api.github.com/users/$USER/starred" \
+         | jq -r '.[]|[.git_url, .owner.login, .name]|@tsv' \
+         | while read -r URL AUTHOR NAME
+    do
+        clone-or-pull $URL $AUTHOR $NAME
+    done
 }
 
 prompt() {
@@ -71,11 +75,13 @@ clone-or-pull() {
         msg "Updating $NAME..."
         cd "$AUTHOR/$NAME"
         git pull --ff-only
+        cd ../..
     else
         msg "Cloning $NAME..."
         mkdir -p "$AUTHOR"
         cd "$AUTHOR"
         git clone "$URL"
+        cd ..
     fi
 }
 

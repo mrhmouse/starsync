@@ -6,6 +6,7 @@ STARDIR=
 TOTAL_NEW=0
 TOTAL_UPDATED=0
 CLONE=1
+SHALLOW=
 
 main() {
     parse-opts "$@"
@@ -30,6 +31,11 @@ parse-opts() {
                 USER="$2"
                 shift
                 ;;
+
+            --shallow) ;&
+            -s)
+                SHALLOW=1
+                ;;
             
             *) ;&
             --help) ;&
@@ -42,10 +48,11 @@ parse-opts() {
 }
 
 show-usage-and-exit() {
-    echo "Usage: $PROGNAME [--no-clones] [-h|--help] [-u|--user]"
+    echo "Usage: $PROGNAME [--no-clones] [-h|--help] [-u|--user] [-s|--shallow]"
     echo '  --no-clones     Do not clone new stars'
     echo '  -h | --help     Show this help message'
     echo '  -u | --user     Set your username. If unset, you will be prompted for it'
+    echo '  -s | --shallow  Perform a shallow clone of new repositories'
     exit
 }
 
@@ -160,7 +167,11 @@ clone-or-pull() {
         TOTAL_NEW=$((TOTAL_NEW + 1))
         mkdir -p "$AUTHOR"
         cd "$AUTHOR"
-        git clone -q "$URL"
+        if test -n "$SHALLOW" ; then
+            git clone -q "$URL" --depth 1
+        else
+            git clone -q "$URL"
+        fi
         cd ..
     fi
     set +e

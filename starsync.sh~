@@ -1,0 +1,16 @@
+#!/usr/bin/zsh
+
+clone-or-pull() {
+    local URL="$1"
+    local AUTHOR="$2"
+    local NAME="$3"
+    if test -d "$AUTHOR/$NAME" ; then
+        echo "Updating $NAME..."
+        cd "$AUTHOR/$NAME"
+        git pull --ff-only
+    else
+        mkdir -p "$AUTHOR"
+        cd "$AUTHOR"
+        git clone "$URL"
+    fi
+}

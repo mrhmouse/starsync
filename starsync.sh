@@ -7,6 +7,7 @@ TOTAL_NEW=0
 TOTAL_UPDATED=0
 CLONE=1
 SHALLOW=
+MAX_REPO_SIZE_KB=$((1024 * 50))
 
 main() {
     parse-opts "$@"
@@ -36,6 +37,12 @@ parse-opts() {
             -s)
                 SHALLOW=1
                 ;;
+
+            --max-repo-size) ;&
+            -m)
+                MAX_REPO_SIZE_KB="$2"
+                shift
+                ;;
             
             *) ;&
             --help) ;&
@@ -49,10 +56,13 @@ parse-opts() {
 
 show-usage-and-exit() {
     echo "Usage: $PROGNAME [--no-clones] [-h|--help] [-u|--user] [-s|--shallow]"
-    echo '  --no-clones     Do not clone new stars'
-    echo '  -h | --help     Show this help message'
-    echo '  -u | --user     Set your username. If unset, you will be prompted for it'
-    echo '  -s | --shallow  Perform a shallow clone of new repositories'
+    echo '  --no-clones           Do not clone new stars'
+    echo '  -h | --help           Show this help message'
+    echo '  -u | --user           Set your username. If unset, you will be prompted for it'
+    echo '  -s | --shallow        Perform a shallow clone of new repositories'
+    echo '  -m | --max-repo-size  Set the maximum allowable repository size, in kilobytes.'
+    echo '                        Repositories over this limit will not be cloned.'
+    echo '                        Defaults to 50 megabytes'
     exit
 }
 
@@ -95,22 +105,20 @@ make-star-directory() {
 }
 
 fetch-all-stars() {
-    set -e
     local PAGE=1
     local READ=1
     while test 1 -eq $READ ; do
         READ=0
         curl -s "https://api.github.com/users/$USER/starred?page=$PAGE" \
-            | jq -r '.[]|[.git_url, .owner.login, .name]|@tsv' \
-            | while read -r URL AUTHOR NAME
+            | jq -r '.[]|[.git_url, .owner.login, .name, .size]|@tsv' \
+            | while read -r URL AUTHOR NAME SIZE
         do
             READ=1
-            clone-or-pull $URL $AUTHOR $NAME
+            clone-or-pull $URL $AUTHOR $NAME $SIZE
         done
 
         PAGE=$((PAGE + 1))
     done
-    set +e
 }
 
 prompt() {
@@ -155,7 +163,14 @@ clone-or-pull() {
     local URL="$1"
     local AUTHOR="$2"
     local NAME="$3"
-    set -e
+    local SIZE="$4"
+    
+    if test $SIZE -ge $MAX_REPO_SIZE_KB ; then
+        msg "Skipping $AUTHOR/$NAME..."
+        sleep 1
+        return
+    fi
+    
     TOTAL_UPDATED=$((TOTAL_UPDATED + 1))
     if test -d "$AUTHOR/$NAME" ; then
         msg "Updating $AUTHOR/$NAME..."
@@ -174,7 +189,6 @@ clone-or-pull() {
         fi
         cd ..
     fi
-    set +e
 }
 
 PROGNAME="$(basename "$0")"

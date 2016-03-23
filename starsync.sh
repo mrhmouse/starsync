@@ -55,7 +55,8 @@ parse-opts() {
 }
 
 show-usage-and-exit() {
-    echo "Usage: $PROGNAME [--no-clones] [-h|--help] [-u|--user] [-s|--shallow]"
+    echo "Usage: $PROGNAME [options]"
+    echo 'Options:'
     echo '  --no-clones           Do not clone new stars'
     echo '  -h | --help           Show this help message'
     echo '  -u | --user           Set your username. If unset, you will be prompted for it'

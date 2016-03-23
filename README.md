@@ -7,11 +7,15 @@ based on your *nix username.
 Usage
 -----
 
-    starsync.sh [--no-clones] [-h|--help] [-u|--user] [-s|--shallow]
-    --no-clones     Do not clone new stars
-    -h | --help     Show this help message
-    -u | --user     Set your username. If unset, you will be prompted for it
-    -s | --shallow  Perform a shallow clone of new repositories
+    starsync.sh [options]
+    Options:
+        --no-clones           Do not clone new stars
+        -h | --help           Show this help message
+        -u | --user           Set your username. If unset, you will be prompted for it
+        -s | --shallow        Perform a shallow clone of new repositories
+        -m | --max-repo-size  Set the maximum allowable repository size, in kilobytes.
+                              Repositories over this limit will not be cloned.
+                              Defaults to 50 megabytes
 
 
 Dependencies

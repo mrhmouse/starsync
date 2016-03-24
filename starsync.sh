@@ -5,6 +5,7 @@ USER=
 STARDIR=
 TOTAL_NEW=0
 TOTAL_UPDATED=0
+TOTAL_SKIPPED=0
 CLONE=1
 SHALLOW=
 MAX_REPO_SIZE_KB=$((1024 * 50))
@@ -68,6 +69,14 @@ show-usage-and-exit() {
 }
 
 show-summary() {
+    if test 0 -ne $TOTAL_SKIPPED ; then
+        echo -n "Skipped $TOTAL_SKIPPED repositor"
+        case $TOTAL_SKIPPED in
+            1) echo -n 'y. ' ;;
+            *) echo -n 'ies. ' ;;
+        esac
+    fi
+    
     echo -n "Synced $TOTAL_UPDATED repositor"
     if test 1 -eq $TOTAL_UPDATED ; then
         echo 'y'
@@ -168,6 +177,7 @@ clone-or-pull() {
     
     if test $SIZE -ge $MAX_REPO_SIZE_KB ; then
         msg "Skipping $AUTHOR/$NAME..."
+        TOTAL_SKIPPED=$((TOTAL_SKIPPED + 1))
         return
     fi
     

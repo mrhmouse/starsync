@@ -168,7 +168,6 @@ clone-or-pull() {
     
     if test $SIZE -ge $MAX_REPO_SIZE_KB ; then
         msg "Skipping $AUTHOR/$NAME..."
-        sleep 1
         return
     fi
     
